@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link href="vis-network.min.css" rel="stylesheet" type="text/css" />
+
+    <title>Cartographer</title>
+  </head>
+  <body>
+    <div class="container-fluid">
+    <h1><a href="index.html">Cartographer</a></h1>
+
+    <div class="row mb-lg-3">
+      <div class="col-md-6">
+
+        <div id="graph" style="height: 500px; border: 1px solid lightgray;"></div>
+      </div>
+      <div class="col-md-6">
+
+
+        <div class="mb-lg-3">
+        <h3>Add Vertex</h3>
+        <form class="form-inline" onsubmit="addNode(); return false;">
+          <input type="text" class="form-control mr-sm-2" style="flex-grow: 1" id="addNodeLabel" placeholder="Node Label"/>
+          <button type="button" class="btn btn-primary" onclick="addNode()" id="addNodeButton" disabled="disabled">Add Vertex</button>
+        </form>
+        </div>
+
+        <div class="mb-lg-3">
+        <h3>Add Edge</h3>
+        <form class="form-inline" onsubmit="addEdge(); return false;">
+          <input type="text" class="form-control mr-sm-2" style="flex-grow: 1" id="addEdgeLabel" placeholder="Edge Label"/>
+          <button type="button" class="btn btn-primary" onclick="addEdge()" id="addEdgeButton" disabled="disabled">Add Edge</button>
+        </form>
+        </div>
+
+        <div class="mb-lg-3">
+        <h3>Properties</h3>
+
+        <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Field</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="propertyBody">
+          <tr id="propertyRow" class="d-none">
+            <td><input name="propertyName" type="text" placeholder="Property Name"/></td>
+            <td>
+              <select name="propertyType">
+                <option>BOOLEAN</option>
+                <option>DATETIME</option>
+                <option>DATE</option>
+                <option>DOUBLE</option>
+                <option>INTEGER</option>
+                <option>IPADDRESS</option>
+                <option>LITERAL</option>
+                <option selected="selected">STRING</option>
+                <option>TIME</option>
+                <option>URL</option>
+              </select>
+            </td>
+            <td><input name="propertyField" type="text" placeholder="Data Field"/></td>
+            <td><button class="btn btn-sm btn-outline-danger" onclick="removeProperty(this)">Remove</button></td>
+          </tr>
+        </tbody>
+        </table>
+
+        <div class="form-check float-left">
+          <input class="form-check-input" type="checkbox" id="propertyMerge" disabled="disabled">
+          <label class="form-check-label" for="propertyMerge">Merge this vertex if all properties match</label>
+        </div>
+
+        <div class="text-right">
+          <button class="btn btn-primary" id="propertyAddButton" onclick="addProperty()" disabled="disabled">Add Property</button>
+        </div>
+        </div>
+
+        <h3>Remove Elements</h3>
+        <div class="alert alert-warning">These actions can't be undone - use with caution!</div>
+        <button type="button" class="btn btn-danger" onclick="removeAllElements()">Remove All Elements</button>
+        <button type="button" class="btn btn-danger" id="removeElementsButton" onclick="removeElements()" disabled="disabled">Remove Selected Elements</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <h2>Mapping</h2>
+        <div class="form-group">
+          <textarea class="form-control" rows="10" id="output"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-dark">Be aware that Cartographer does not currently support all functionality of the mapping tool. If you wish to include <code>filters</code> or <code>_except</code> statements, you will need to manually add these into the output outside of this tool.</div>
+
+
+    <div class="modal fade" id="errorModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Parse Error</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            Unable to parse the provided YAML. The load operation has been cancelled and your existing graph will be retained.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirm Load</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>You have made a change to the output, which will attempt to parse your modified output and load it into the graph. This will replace your existing graph.</p>
+            <p>Do you wish to continue?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">No</button>
+            <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="loadFromOutput()">Yes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.12.0/js-yaml.min.js" integrity="sha256-VDV4IpYWirG9Caah5vULCWIJ1IGOyuZMI1AHewjwbb8=" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" src="vis-network.min.js"></script>
+    <script type="text/javascript" src="cartographer.js"></script>
+  </body>
+</html>
